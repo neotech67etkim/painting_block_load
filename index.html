@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>해양사업본부 블록도장공장 시뮬레이션</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>해양사업본부 블록도장공장 시뮬레이션</h1>
+    <div class="date-control">
+      <label for="date-input">기준일자</label>
+      <input type="date" id="date-input">
+    </div>
+  </header>
+
+  <div id="dashboard" class="dashboard"></div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="layout">배치도</button>
+    <button class="tab-btn" data-tab="schedule">일정표</button>
+    <button class="tab-btn" data-tab="blocks">블록관리</button>
+  </nav>
+
+  <main>
+    <section id="panel-layout" class="panel active">
+      <div class="layout-grid">
+        <div id="layout-svg-host" class="svg-host"></div>
+        <aside id="cell-detail-host" class="cell-detail"></aside>
+      </div>
+      <p class="legend">
+        <span class="legend-item"><span class="swatch util-empty"></span>여유</span>
+        <span class="legend-item"><span class="swatch util-mid"></span>사용중</span>
+        <span class="legend-item"><span class="swatch util-high"></span>거의 만적</span>
+        <span class="legend-item"><span class="swatch util-full"></span>만적/초과</span>
+        <span class="legend-item note">※ 좌표는 항공사진 기반 개략도이며 실측 배치가 아닙니다.</span>
+      </p>
+    </section>
+
+    <section id="panel-schedule" class="panel">
+      <div class="schedule-controls">
+        <label>시작일 <input type="date" id="schedule-start"></label>
+        <label>일수 <input type="number" id="schedule-days" min="7" max="60"></label>
+        <span class="muted">각 셀의 날짜별 점유 블록을 표시합니다. 빨간 테두리는 적치가능 수를 초과한 경우입니다.</span>
+      </div>
+      <div id="schedule-host" class="schedule-host"></div>
+    </section>
+
+    <section id="panel-blocks" class="panel">
+      <div id="blocks-host"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
