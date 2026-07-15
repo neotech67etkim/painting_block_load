@@ -90,10 +90,18 @@ export function renderLayout(container, date) {
           fill: occupant.block.color, class: 'block-chip' + (isOverflow ? ' block-chip-overflow' : ''), rx: 1,
         }));
         const fontSize = Math.max(2.6, Math.min(slotW, slotH) * 0.32);
-        g.appendChild(el('text', {
+        const chipW = slotW * (1 - shrink * 2);
+        const maxChars = Math.max(1, Math.floor((chipW * 0.92) / (fontSize * 0.58)));
+        const fullName = occupant.block.name;
+        const label = fullName.length > maxChars
+          ? (maxChars <= 1 ? fullName.slice(0, 1) : fullName.slice(0, maxChars - 1) + '…')
+          : fullName;
+        const textEl = el('text', {
           x: sx + slotW / 2, y: sy + slotH / 2 + fontSize * 0.35,
           'text-anchor': 'middle', 'font-size': fontSize, class: 'block-chip-label',
-        }, [document.createTextNode(occupant.block.name)]));
+        }, [document.createTextNode(label)]);
+        if (label !== fullName) textEl.appendChild(el('title', {}, [document.createTextNode(fullName)]));
+        g.appendChild(textEl);
       } else {
         g.appendChild(el('rect', {
           x: sx + slotW * 0.08, y: sy + slotH * 0.08,

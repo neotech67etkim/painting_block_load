@@ -115,14 +115,27 @@ export const Store = {
 
   getBlock(id) { return blocks.find(b => b.id === id) || null; },
 
-  addBlock({ name, w, l, route }) {
+  addBlock({ name, w, l, route, meta }) {
     const block = {
       id: uid(), name, size: { w: Number(w), l: Number(l) }, color: colorFor(name + uid()),
       route: route.map(r => ({ id: uid('leg'), ...r })),
+      ...(meta ? { meta } : {}),
     };
     blocks.push(block);
     notify();
     return block;
+  },
+
+  // 엑셀 등 외부 데이터에서 파싱한 블록 목록을 일괄 반영 (id/color 자동 생성)
+  loadBlocksBulk(list, { replace = true } = {}) {
+    const built = list.map(b => ({
+      id: uid(), name: b.name, size: { w: Number(b.w), l: Number(b.l) }, color: colorFor(b.name + uid()),
+      route: b.route.map(r => ({ id: uid('leg'), stage: r.stage, cellId: r.cellId, start: r.start, end: r.end })),
+      ...(b.meta ? { meta: b.meta } : {}),
+    }));
+    blocks = replace ? built : [...blocks, ...built];
+    notify();
+    return built;
   },
 
   updateBlock(id, { name, w, l, route }) {

@@ -168,6 +168,12 @@ td.overflow { outline: 2px solid var(--full); outline-offset: -2px; }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-danger { color: #b91c1c; border-color: #fca5a5; }
 
+.xlsx-bar { align-items: center; margin-bottom: 6px; }
+.xlsx-mode { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.xlsx-status { font-size: 13px; margin-bottom: 12px; min-height: 18px; }
+.xlsx-ok { color: #15803d; }
+.xlsx-warn { color: #b45309; }
+
 .form-host:empty { display: none; }
 .block-form {
   background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px;

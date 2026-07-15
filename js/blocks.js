@@ -1,6 +1,7 @@
 // 블록관리 탭: 블록 목록 + 추가/수정/삭제 (블록별 공정 일정 route 편집)
 import { ALL_CELLS, STAGE_LABEL } from './data.js';
 import { Store, activeLegOnDate } from './store.js';
+import { importXlsxFile } from './importXlsx.js';
 
 let editingId = null; // null = 새 블록 추가 폼 닫힘, 'new' = 새 블록, id = 해당 블록 수정
 
@@ -77,15 +78,33 @@ export function renderBlocks(container, today) {
   `;
   container.appendChild(toolbar);
 
+  const xlsxBar = document.createElement('div');
+  xlsxBar.className = 'blocks-toolbar xlsx-bar';
+  xlsxBar.innerHTML = `
+    <label class="btn-primary" style="cursor:pointer">실적 엑셀 가져오기(.xlsx)
+      <input id="xlsx-input" type="file" accept=".xlsx,.xls" style="display:none">
+    </label>
+    <label class="xlsx-mode"><input type="radio" name="xlsx-mode" value="replace" checked> 기존 블록 교체</label>
+    <label class="xlsx-mode"><input type="radio" name="xlsx-mode" value="append"> 기존 블록에 추가</label>
+    <span class="muted">엑셀 형식: A호선·B블록·C~F SIZE(소지면적,L,B,H)·G~H계획(착수,완료)·I~J실적(착수,완료)·K비고. 도장 착수 전 2일(입고1일+작업1일)을 블라스팅 기간으로 자동 생성하고, 셀은 용량 기준 자동 배정합니다.</span>
+  `;
+  container.appendChild(xlsxBar);
+
+  const xlsxStatus = document.createElement('div');
+  xlsxStatus.id = 'xlsx-status';
+  xlsxStatus.className = 'xlsx-status';
+  container.appendChild(xlsxStatus);
+
   const formHost = document.createElement('div');
   formHost.className = 'form-host';
   container.appendChild(formHost);
 
   const table = document.createElement('table');
   table.className = 'block-table';
+  const hasMeta = Store.getBlocks().some(b => b.meta);
   table.innerHTML = `
     <thead><tr>
-      <th></th><th>블록명</th><th>크기(W×L)</th><th>오늘 상태</th><th>공정 일정</th><th></th>
+      <th></th><th>블록명</th><th>크기(W×L)</th><th>오늘 상태</th><th>공정 일정</th>${hasMeta ? '<th>비고</th>' : ''}<th></th>
     </tr></thead>
     <tbody></tbody>`;
   container.appendChild(table);
@@ -98,6 +117,10 @@ export function renderBlocks(container, today) {
       : (block.route[0] && today < block.route[0].start ? '대기(입고 전)'
         : (block.route.length && today > block.route[block.route.length - 1].end ? '완료/출고' : '이동 중'));
 
+    const metaCell = block.meta
+      ? `<td class="muted">${block.meta.usedActual ? '실적' : '계획'}${block.meta.note ? ' · ' + block.meta.note : ''}</td>`
+      : (hasMeta ? '<td></td>' : '');
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><span class="dot" style="background:${block.color}"></span></td>
@@ -105,6 +128,7 @@ export function renderBlocks(container, today) {
       <td>${block.size.w} × ${block.size.l} m</td>
       <td>${statusText}</td>
       <td class="route-cell">${block.route.map(r => `<div class="route-leg">${STAGE_LABEL[r.stage]} · ${r.cellId} <span class="muted">(${r.start}~${r.end})</span></div>`).join('') || '<span class="muted">일정 없음</span>'}</td>
+      ${metaCell}
       <td class="row-actions">
         <button class="btn-secondary edit-btn">수정</button>
         <button class="btn-danger delete-btn">삭제</button>
@@ -138,6 +162,27 @@ export function renderBlocks(container, today) {
   });
   toolbar.querySelector('#reset-btn').addEventListener('click', () => {
     if (confirm('현재 블록 데이터를 샘플 데이터로 초기화할까요?')) Store.resetSeed();
+  });
+
+  xlsxBar.querySelector('#xlsx-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mode = xlsxBar.querySelector('input[name="xlsx-mode"]:checked').value;
+    xlsxStatus.textContent = `'${file.name}' 읽는 중...`;
+    try {
+      const { blocks: parsed, skipped, sheetName, overflowLegCount, total } = await importXlsxFile(file);
+      if (parsed.length === 0) {
+        xlsxStatus.innerHTML = `<span class="xlsx-warn">'${sheetName}' 시트에서 유효한 블록을 찾지 못했습니다. 서식(2행 헤더, A~K열)을 확인해주세요.</span>`;
+      } else {
+        Store.loadBlocksBulk(parsed, { replace: mode === 'replace' });
+        xlsxStatus.innerHTML = `<span class="xlsx-ok">'${sheetName}' 시트에서 ${total}건 중 ${parsed.length}건 배치 완료</span>` +
+          (overflowLegCount > 0 ? ` <span class="xlsx-warn">(${overflowLegCount}건 공정 구간은 셀 정원을 초과해 배정됨 — 배치도/일정표에서 빨간색으로 표시됩니다)</span>` : '') +
+          (skipped.length > 0 ? ` <span class="muted">· 제외 ${skipped.length}건(날짜 정보 없음)</span>` : '');
+      }
+    } catch (err) {
+      xlsxStatus.innerHTML = `<span class="xlsx-warn">엑셀을 읽지 못했습니다: ${err.message}</span>`;
+    }
+    e.target.value = '';
   });
 }
 
