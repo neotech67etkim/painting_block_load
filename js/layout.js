@@ -1,5 +1,5 @@
 // 배치도 탭: 야드 SVG 맵 (실척, viewBox 단위 = m) + 셀별 점유 현황 + 상세 패널
-import { YARD, ALL_CELLS, YARD_BOUNDS, getCell } from './data.js';
+import { YARD, ALL_CELLS, YARD_BOUNDS, getCell, usablePlacementSize } from './data.js';
 import { cellOccupancy, cellUtilization } from './store.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -145,16 +145,20 @@ export function renderCellDetail(container, cellId, date) {
   if (!cell) return;
   const util = cellUtilization(cellId, date);
   const occ = cellOccupancy(cellId, date);
+  const usable = usablePlacementSize(cell);
 
   const wrap = document.createElement('div');
   wrap.innerHTML = `
     <h3>${cell.factoryName} · ${cell.name}</h3>
     <table class="kv">
       <tr><th>구분</th><td>${cell.type === 'blast' ? '블라스팅셀' : '도장셀'}</td></tr>
-      <tr><th>규격 (W×L×H)</th><td>${cell.w}m × ${cell.h}m × ${cell.hh}m</td></tr>
+      <tr><th>건축규격 (W×L×H)</th><td>${cell.w}m × ${cell.h}m × ${cell.hh}m</td></tr>
+      ${cell.netW ? `<tr><th>입고 사이즈(실사용)</th><td>${cell.netW}m × ${cell.netL}m</td></tr>` : ''}
+      <tr><th>블록 배치 가능 크기</th><td>${usable.w.toFixed(1)}m × ${usable.l.toFixed(1)}m <span class="muted">(장비 여유 1.5m×사방 제외)</span></td></tr>
       <tr><th>면적</th><td>${cell.area.toLocaleString()} ㎡</td></tr>
       <tr><th>적치 가능 블록수</th><td>${cell.capacity} 개</td></tr>
       <tr><th>${date} 점유율</th><td class="${utilClass(util.ratio)}-text">${util.occupied} / ${util.capacity} ${util.ratio >= 1 ? '(만적)' : ''}</td></tr>
+      ${cell.note ? `<tr><th>비고</th><td class="muted">${cell.note}</td></tr>` : ''}
     </table>
     <h4>현재 점유 블록</h4>
   `;

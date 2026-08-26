@@ -3,7 +3,7 @@
 //   A:호선 B:블록 | C~F: SIZE(소지면적㎡, L, B, H) | G~H: 계획(착수,완료) | I~J: 실적(착수,완료) | K: 비고
 // 규칙: 블라스팅 2일(1일차 입고, 2일차 작업) 후 도장샵으로 이동.
 //       도장 착수/완료는 실적이 있으면 실적을, 없으면 계획을 사용.
-import { ALL_CELLS } from './data.js';
+import { ALL_CELLS, usablePlacementSize } from './data.js';
 import { addDays } from './store.js';
 
 const COL = { hull: 0, block: 1, area: 2, L: 3, B: 4, H: 5, planStart: 6, planEnd: 7, actStart: 8, actEnd: 9, note: 10 };
@@ -85,9 +85,10 @@ export function parseWorkbookRows(workbook) {
   return { drafts, skipped, sheetName };
 }
 
-// 블록이 셀 바닥면(W×H)에 회전 없이/90도 회전해서 물리적으로 들어가는지 확인
+// 블록이 셀의 실제 배치 가능 크기(장비 여유 제외)에 회전 없이/90도 회전해서 들어가는지 확인
 function fitsCell(cell, w, l) {
-  return (w <= cell.w && l <= cell.h) || (l <= cell.w && w <= cell.h);
+  const u = usablePlacementSize(cell);
+  return (w <= u.w && l <= u.l) || (l <= u.w && w <= u.l);
 }
 
 // 그리디 적치 배정: 같은 유형(블라스팅/도장) 셀 중 블록 크기가 실제로 들어가는 셀을
