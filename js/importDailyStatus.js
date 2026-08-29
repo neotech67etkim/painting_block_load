@@ -53,21 +53,40 @@ function resolveCellId(label) {
   return matchFactory2CellId(label);
 }
 
-// 제목 행에서 "26. 8월 21일" 같은 날짜를 찾는다.
+// 제목 행에서 날짜를 찾는다. 실제 파일마다 "26. 8월 21일" / "2026년 8월 21일" /
+// "2026.08.21" 등 표기가 다를 수 있어 여러 패턴을 순서대로 시도한다.
+const DATE_PATTERNS = [
+  /(\d{2,4})\s*[.\-]\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/,  // 26. 8월 21일
+  /(\d{2,4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/,     // 2026년 8월 21일
+  /(\d{4})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{1,2})/,  // 2026.08.21 / 2026-08-21
+];
+
 function extractFileDate(rows) {
   for (const row of rows) {
     for (const cell of row) {
       const s = String(cell ?? '');
-      const m = s.match(/(\d{2,4})\s*\.\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
-      if (m) {
+      for (const re of DATE_PATTERNS) {
+        const m = s.match(re);
+        if (!m) continue;
         let year = Number(m[1]);
         if (year < 100) year += 2000;
         const month = Number(m[2]), day = Number(m[3]);
+        if (month < 1 || month > 12 || day < 1 || day > 31) continue;
         return { year, month, day, iso: `${year}-${pad2(month)}-${pad2(day)}` };
       }
     }
   }
   return null;
+}
+
+// 진단용: 날짜를 못 찾았을 때 시트 상단 내용을 짧게 보여줘서, 사용자가 실제 파일
+// 없이도 이 문자열만 알려주면 날짜 패턴을 바로 맞출 수 있게 한다.
+function topLeftSnippet(rows, maxRows = 6, maxCols = 6, maxChars = 200) {
+  const lines = (rows || []).slice(0, maxRows)
+    .map(row => (row || []).slice(0, maxCols).map(v => String(v ?? '').trim()).filter(Boolean).join(' | '))
+    .filter(Boolean);
+  const text = lines.join(' / ');
+  return text.length > maxChars ? text.slice(0, maxChars) + '…' : text;
 }
 
 // "M/D" 또는 "M/D(요일)" 텍스트(또는 실제 Date 셀)를 파일 날짜의 연도 기준 ISO로 변환.
@@ -110,15 +129,26 @@ function findHeaderGroups(rows) {
   return groups;
 }
 
-// 워크북(첫 시트) 하나를 파싱해 그 날짜의 관측치 목록을 반환한다.
+// 워크북을 파싱해 그 날짜의 관측치 목록을 반환한다. 날짜 제목이 첫 시트에 없을 수도
+// 있으므로, 날짜를 찾을 때까지 시트를 순서대로 시도한다.
 export function parseDailyStatusWorkbook(workbook) {
-  const sheetName = workbook.SheetNames[0];
-  const ws = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+  let sheetName = workbook.SheetNames[0];
+  let rows = [];
+  let fileDate = null;
 
-  const fileDate = extractFileDate(rows);
+  for (const name of workbook.SheetNames) {
+    const r = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: false, defval: '' });
+    if (rows.length === 0) rows = r; // 진단 스니펫용으로 첫 시트 내용은 기본으로 보관
+    const d = extractFileDate(r);
+    if (d) { sheetName = name; rows = r; fileDate = d; break; }
+  }
+
   if (!fileDate) {
-    return { sheetName, date: null, observations: [], unmatchedLabels: [], error: '제목에서 날짜를 찾지 못했습니다 (예: "26. 8월 21일" 형식 기대).' };
+    const snippet = topLeftSnippet(rows);
+    return {
+      sheetName, date: null, observations: [], unmatchedLabels: [],
+      error: `제목에서 날짜를 찾지 못했습니다 (예: "26. 8월 21일" 형식 기대). 시트 "${sheetName}" 상단: ${snippet || '(내용 없음)'}`,
+    };
   }
 
   const groups = findHeaderGroups(rows);
