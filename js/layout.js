@@ -11,6 +11,8 @@ function el(tag, attrs = {}, children = []) {
   return e;
 }
 
+const CELL_TYPE_LABEL = { blast: '블라스팅셀', paint: '도장셀', yard: '야적 구역' };
+
 function utilClass(ratio) {
   if (ratio >= 1) return 'util-full';
   if (ratio >= 0.7) return 'util-high';
@@ -158,15 +160,18 @@ export function renderCellDetail(container, cellId, date) {
   const occ = cellOccupancy(cellId, date);
   const usable = usablePlacementSize(cell);
 
+  const isYard = cell.type === 'yard';
   const wrap = document.createElement('div');
   wrap.innerHTML = `
     <h3>${cell.factoryName} · ${cell.name}${cell.signage ? ` <span class="muted">(#${cell.signage})</span>` : ''}</h3>
     <table class="kv">
-      <tr><th>구분</th><td>${cell.type === 'blast' ? '블라스팅셀' : '도장셀'}</td></tr>
-      <tr><th>건축규격 (W×L×H)</th><td>${cell.w}m × ${cell.h}m × ${cell.hh}m</td></tr>
+      <tr><th>구분</th><td>${CELL_TYPE_LABEL[cell.type] || cell.type}</td></tr>
+      ${isYard ? '<tr><th colspan="2" class="muted">공장 밖 야적/출고 대기 구역 (정식 규격 없음, 위치 참고용)</th></tr>' : `
+      <tr><th>건축규격 (가로×세로×높이)</th><td>${cell.w}m × ${cell.h}m × ${cell.hh}m</td></tr>
       ${cell.netW ? `<tr><th>입고 사이즈(실사용)</th><td>${cell.netW}m × ${cell.netL}m</td></tr>` : ''}
       <tr><th>블록 배치 가능 크기</th><td>${usable.w.toFixed(1)}m × ${usable.l.toFixed(1)}m <span class="muted">(장비 여유 1.5m×사방 제외)</span></td></tr>
       <tr><th>면적</th><td>${cell.area.toLocaleString()} ㎡</td></tr>
+      `}
       <tr><th>적치 가능 블록수</th><td>${cell.capacity} 개</td></tr>
       <tr><th>${date} 점유율</th><td class="${utilClass(util.ratio)}-text">${util.occupied} / ${util.capacity} ${util.ratio >= 1 ? '(만적)' : ''}</td></tr>
       ${cell.note ? `<tr><th>비고</th><td class="muted">${cell.note}</td></tr>` : ''}

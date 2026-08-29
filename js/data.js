@@ -15,6 +15,7 @@
 export const STAGE_LABEL = {
   blast: '블라스팅',
   paint: '도장',
+  yard: '야적/출고대기',
 };
 
 // 셀 벽면 장비로 인해 사방으로 띄워야 하는 여유 폭(m)
@@ -67,6 +68,22 @@ export const YARD = {
         { id: 'f2-paint1', name: '2-1 도장셀', signage: 3, factory: '2공장', type: 'paint', x: 232, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
         { id: 'f2-blast2', name: '2-2 블라스팅셀', signage: 2, factory: '2공장', type: 'blast', x: 264, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
         { id: 'f2-blast1', name: '2-1 블라스팅셀', signage: 1, factory: '2공장', type: 'blast', x: 296, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
+      ],
+    },
+    {
+      // 일일작업현황 파일에 나오는 "공장 밖 야적/출고대기" 구역. 실제 건물이 아니라
+      // 블록이 잠시 쌓여 대기하는 야적 공간이라 정확한 좌표/규격은 없고, 일일현황
+      // 가져오기에서 이 구역에 있는 블록도 함께 보여주기 위한 가상 셀이다
+      // (사용자 요청, 2026-08-29).
+      id: 'yard-outdoor',
+      name: '야적/출고 대기',
+      x: 0, y: 196, w: 328, h: 26,
+      cells: [
+        { id: 'yard-f1-front1', name: '#1 앞', factory: '야적', type: 'yard', x: 0, y: 196, w: 60, h: 26, hh: 0, capacity: 20, area: 0 },
+        { id: 'yard-f1-front2', name: '#2 앞', factory: '야적', type: 'yard', x: 64, y: 196, w: 60, h: 26, hh: 0, capacity: 20, area: 0 },
+        { id: 'yard-f1-outdoor', name: '공장 앞 옥외장', factory: '야적', type: 'yard', x: 128, y: 196, w: 66, h: 26, hh: 0, capacity: 20, area: 0 },
+        { id: 'yard-shipped', name: 'YARD 출고 BLOCK', factory: '야적', type: 'yard', x: 198, y: 196, w: 62, h: 26, hh: 0, capacity: 30, area: 0 },
+        { id: 'yard-stockyard', name: '도장공장 앞 적치장', factory: '야적', type: 'yard', x: 264, y: 196, w: 64, h: 26, hh: 0, capacity: 30, area: 0 },
       ],
     },
   ],

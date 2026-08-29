@@ -2,6 +2,7 @@
 import { ALL_CELLS, STAGE_LABEL } from './data.js';
 import { Store, activeLegOnDate } from './store.js';
 import { importXlsxFile } from './importXlsx.js';
+import { importDailyStatusFiles } from './importDailyStatus.js';
 
 let editingId = null; // null = 새 블록 추가 폼 닫힘, 'new' = 새 블록, id = 해당 블록 수정
 
@@ -95,6 +96,25 @@ export function renderBlocks(container, today) {
   xlsxStatus.className = 'xlsx-status';
   container.appendChild(xlsxStatus);
 
+  const dailyBar = document.createElement('div');
+  dailyBar.className = 'blocks-toolbar xlsx-bar';
+  dailyBar.innerHTML = `
+    <label class="btn-primary" style="cursor:pointer">일일작업현황 여러 개 가져오기(.xlsx)
+      <input id="daily-input" type="file" accept=".xlsx,.xls" multiple style="display:none">
+    </label>
+    <label class="xlsx-mode"><input type="radio" name="daily-mode" value="replace" checked> 기존 블록 교체</label>
+    <label class="xlsx-mode"><input type="radio" name="daily-mode" value="append"> 기존 블록에 추가</label>
+    <span class="muted">"도장작업계획 (YY. M월 D일)" 형식의 일일현황 파일들을 날짜순으로 모아 셀 점유 이력을 재구성합니다.
+      작업 단계(1ST/2ND/FINAL 등)는 구분하지 않고 "그 셀에 있으면 점유 중"으로 단순화합니다.
+      크기(W×L)는 파일에 면적(m²)만 있어 정사각형으로 근사합니다.</span>
+  `;
+  container.appendChild(dailyBar);
+
+  const dailyStatus = document.createElement('div');
+  dailyStatus.id = 'daily-status';
+  dailyStatus.className = 'xlsx-status';
+  container.appendChild(dailyStatus);
+
   const formHost = document.createElement('div');
   formHost.className = 'form-host';
   container.appendChild(formHost);
@@ -175,12 +195,42 @@ export function renderBlocks(container, today) {
         xlsxStatus.innerHTML = `<span class="xlsx-warn">'${sheetName}' 시트에서 유효한 블록을 찾지 못했습니다. 서식(2행 헤더, A~K열)을 확인해주세요.</span>`;
       } else {
         Store.loadBlocksBulk(parsed, { replace: mode === 'replace' });
-        xlsxStatus.innerHTML = `<span class="xlsx-ok">'${sheetName}' 시트에서 ${total}건 중 ${parsed.length}건 배치 완료</span>` +
+        // Store 변경 시 renderBlocks가 통째로 다시 그려져 위 xlsxStatus 참조는 이미
+        // 옛 DOM 노드가 되므로, 같은 id로 새로 그려진 요소를 다시 찾아서 메시지를 넣는다.
+        const liveStatus = document.getElementById('xlsx-status');
+        if (liveStatus) liveStatus.innerHTML = `<span class="xlsx-ok">'${sheetName}' 시트에서 ${total}건 중 ${parsed.length}건 배치 완료</span>` +
           (overflowLegCount > 0 ? ` <span class="xlsx-warn">(${overflowLegCount}건 공정 구간은 셀 정원을 초과해 배정됨 — 배치도/일정표에서 빨간색으로 표시됩니다)</span>` : '') +
           (skipped.length > 0 ? ` <span class="muted">· 제외 ${skipped.length}건(날짜 정보 없음)</span>` : '');
       }
     } catch (err) {
       xlsxStatus.innerHTML = `<span class="xlsx-warn">엑셀을 읽지 못했습니다: ${err.message}</span>`;
+    }
+    e.target.value = '';
+  });
+
+  dailyBar.querySelector('#daily-input').addEventListener('change', async (e) => {
+    const files = [...e.target.files];
+    if (files.length === 0) return;
+    const mode = dailyBar.querySelector('input[name="daily-mode"]:checked').value;
+    dailyStatus.textContent = `파일 ${files.length}개 읽는 중...`;
+    try {
+      const { blocks: parsed, perFile, unmatchedLabels, fileCount, usedFileCount } = await importDailyStatusFiles(files);
+      const fileLines = perFile.map(p => {
+        if (p.error) return `<div class="muted">· ${p.fileName}: <span class="xlsx-warn">${p.error}</span></div>`;
+        return `<div class="muted">· ${p.fileName} (${p.date}): ${p.observations.length}건 인식</div>`;
+      }).join('');
+      if (parsed.length === 0) {
+        dailyStatus.innerHTML = `<span class="xlsx-warn">유효한 블록을 찾지 못했습니다.</span>${fileLines}`;
+      } else {
+        Store.loadBlocksBulk(parsed, { replace: mode === 'replace' });
+        // xlsx-status와 같은 이유로, Store 변경으로 다시 그려진 뒤 같은 id 요소를 재조회.
+        const liveStatus = document.getElementById('daily-status');
+        if (liveStatus) liveStatus.innerHTML = `<span class="xlsx-ok">파일 ${usedFileCount}/${fileCount}개에서 블록 ${parsed.length}개 재구성 완료</span>` +
+          (unmatchedLabels.length > 0 ? ` <span class="xlsx-warn">· 못 알아본 셀 라벨: ${unmatchedLabels.join(', ')}</span>` : '') +
+          fileLines;
+      }
+    } catch (err) {
+      dailyStatus.innerHTML = `<span class="xlsx-warn">가져오지 못했습니다: ${err.message}</span>`;
     }
     e.target.value = '';
   });

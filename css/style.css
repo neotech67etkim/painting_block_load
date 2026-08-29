@@ -101,6 +101,7 @@ main { padding: 16px 20px 40px; }
 .util-high .cell-rect { fill: #fffbeb; }
 .util-full .cell-rect { fill: #fef2f2; }
 .cell-selected .cell-rect { stroke: var(--accent); stroke-width: 1.4; }
+.cell-yard .cell-rect { stroke-dasharray: 2 1.2; }
 
 .cell-usable-outline { fill: none; stroke: #9ca3af; stroke-width: 0.3; stroke-dasharray: 1 1; }
 .block-chip { stroke: rgba(0,0,0,0.25); stroke-width: 0.2; }
