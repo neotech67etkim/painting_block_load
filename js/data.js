@@ -8,10 +8,6 @@
 //     블라스팅 2-2(#2)·2-1(#1) 순으로 이어진다(2-1 블라스팅셀이 야드 배치상 가장
 //     오른쪽에 위치, 2026-08-29 확인). 이 물리적 일련번호(#1~#10)를 각 셀의 signage
 //     필드에 담아둔다.
-//   - 도장2공장 블라스팅 2-1(#1) 셀은 다른 셀과 달리 건물 내에서 90도(반시계 방향)
-//     회전된 형태로 지어져 있어, w/h가 다른 블라스팅셀과 가로/세로가 바뀌어 있다
-//     (건축규격 40m×32m). 입고 사이즈(netW/netL 38×31)가 이 방향으로만 자연스럽게
-//     들어맞는다.
 //   - 각 셀은 벽면 양옆 장비 때문에 실제 블록 배치 가능 폭이 셀 크기보다 줄어듦
 //     (EQUIPMENT_CLEARANCE_M 만큼 사방 여유 필요).
 // 좌표는 항공사진 배치를 참고한 개략도(schematic)이며 실측 좌표가 아님.
@@ -58,29 +54,25 @@ export const YARD = {
     {
       id: 'f2',
       name: '도장2공장',
-      x: 140, y: 40, w: 336, h: 46,
+      // 도장1공장과 좌측 끝단(x=0)을 맞춤.
+      x: 0, y: 40, w: 328, h: 46,
       cells: [
-        { id: 'f2-paint8', name: '2-8 도장셀', signage: 10, factory: '2공장', type: 'paint', x: 140, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint7', name: '2-7 도장셀', signage: 9, factory: '2공장', type: 'paint', x: 174, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint6', name: '2-6 도장셀', signage: 8, factory: '2공장', type: 'paint', x: 208, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint5', name: '2-5 도장셀', signage: 7, factory: '2공장', type: 'paint', x: 242, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint4', name: '2-4 도장셀', signage: 6, factory: '2공장', type: 'paint', x: 276, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint3', name: '2-3 도장셀', signage: 5, factory: '2공장', type: 'paint', x: 308, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint2', name: '2-2 도장셀', signage: 4, factory: '2공장', type: 'paint', x: 340, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint1', name: '2-1 도장셀', signage: 3, factory: '2공장', type: 'paint', x: 372, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-blast2', name: '2-2 블라스팅셀', signage: 2, factory: '2공장', type: 'blast', x: 404, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
-        { id: 'f2-blast1', name: '2-1 블라스팅셀', signage: 1, factory: '2공장', type: 'blast', x: 436, y: 40, w: 40, h: 32, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
+        { id: 'f2-paint8', name: '2-8 도장셀', signage: 10, factory: '2공장', type: 'paint', x: 0, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint7', name: '2-7 도장셀', signage: 9, factory: '2공장', type: 'paint', x: 34, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint6', name: '2-6 도장셀', signage: 8, factory: '2공장', type: 'paint', x: 68, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint5', name: '2-5 도장셀', signage: 7, factory: '2공장', type: 'paint', x: 102, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint4', name: '2-4 도장셀', signage: 6, factory: '2공장', type: 'paint', x: 136, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint3', name: '2-3 도장셀', signage: 5, factory: '2공장', type: 'paint', x: 168, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint2', name: '2-2 도장셀', signage: 4, factory: '2공장', type: 'paint', x: 200, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint1', name: '2-1 도장셀', signage: 3, factory: '2공장', type: 'paint', x: 232, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-blast2', name: '2-2 블라스팅셀', signage: 2, factory: '2공장', type: 'blast', x: 264, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
+        { id: 'f2-blast1', name: '2-1 블라스팅셀', signage: 1, factory: '2공장', type: 'blast', x: 296, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
       ],
     },
   ],
-  // 참고용 랜드마크 (표에 상세 규격 없음 - 시각적 배치 참고용)
-  landmarks: [
-    { id: 'legacy', name: '조선2야드 선행도장공장\n(참고, 상세 셀 정보 없음)', x: 0, y: 0, w: 102, h: 46, note: '집계: 7,590㎡ / 10개 블록' },
-    { id: 'paintstore', name: '도료창', x: 140, y: 0, w: 70, h: 25 },
-    { id: 'equipshelter', name: '장비보관쉘터', x: 230, y: 0, w: 90, h: 25 },
-    { id: 'materialstore', name: '자재\n창고', x: -40, y: 130, w: 35, h: 56 },
-    { id: 'controlroom', name: '관제실', x: -40, y: 192, w: 35, h: 20 },
-  ],
+  // 도장1공장/도장2공장 외 다른 건물(자재창고/관제실/도료창/장비보관쉘터/구 선행도장공장)은
+  // 사용자 요청(2026-08-29)에 따라 배치도에서 제외했다.
+  landmarks: [],
 };
 
 // 편의를 위한 전체 셀 목록 (factory 참조 포함)
