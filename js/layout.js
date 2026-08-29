@@ -1,5 +1,5 @@
 // 배치도 탭: 야드 SVG 맵 (실척, viewBox 단위 = m) + 셀별 점유 현황 + 상세 패널
-import { YARD, ALL_CELLS, YARD_BOUNDS, getCell, usablePlacementSize } from './data.js';
+import { YARD, ALL_CELLS, YARD_BOUNDS, getCell, usablePlacementSize, EQUIPMENT_CLEARANCE_M } from './data.js';
 import { cellOccupancy, cellUtilization } from './store.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -66,50 +66,60 @@ export function renderLayout(container, date) {
 
     g.appendChild(el('rect', { x: cell.x, y: cell.y, width: cell.w, height: cell.h, class: 'cell-rect' }));
 
-    // 셀 내부 슬롯 격자 + 점유 블록 칩
-    // 정원(capacity)을 초과해 배치된 블록도 빈 슬롯을 늘려서 모두 표시한다.
+    // 셀 내부에 점유 블록을 실제 치수(w×l, m)로 축척에 맞춰 배치한다 (셸프 패킹).
+    // 실제 물리적 배치 이력은 없으므로 배치 순서는 추정치이지만, 블록 크기와 셀 크기의
+    // 비율만큼은 정확히 맞춰서 "정원 안에 실제로 들어가는지"를 눈으로 확인할 수 있게 한다.
     const occ = cellOccupancy(cell.id, date);
-    const cap = Math.max(cell.capacity, 1, occ.length);
-    const cols = Math.ceil(Math.sqrt(cap));
-    const rows = Math.ceil(cap / cols);
-    const pad = Math.min(cell.w, cell.h) * 0.06;
-    const slotW = (cell.w - pad * 2) / cols;
-    const slotH = (cell.h - pad * 2) / rows;
+    const usableX = cell.x + EQUIPMENT_CLEARANCE_M;
+    const usableY = cell.y + EQUIPMENT_CLEARANCE_M;
+    const usableW = Math.max(0, cell.w - EQUIPMENT_CLEARANCE_M * 2);
+    const usableH = Math.max(0, cell.h - EQUIPMENT_CLEARANCE_M * 2);
 
-    for (let i = 0; i < cap; i++) {
-      const col = i % cols, row = Math.floor(i / cols);
-      const sx = cell.x + pad + col * slotW;
-      const sy = cell.y + pad + row * slotH;
-      const occupant = occ[i];
-      if (occupant) {
-        const shrink = 0.08;
-        const isOverflow = i >= cell.capacity;
-        g.appendChild(el('rect', {
-          x: sx + slotW * shrink, y: sy + slotH * shrink,
-          width: slotW * (1 - shrink * 2), height: slotH * (1 - shrink * 2),
-          fill: occupant.block.color, class: 'block-chip' + (isOverflow ? ' block-chip-overflow' : ''), rx: 1,
-        }));
-        const fontSize = Math.max(2.6, Math.min(slotW, slotH) * 0.32);
-        const chipW = slotW * (1 - shrink * 2);
-        const maxChars = Math.max(1, Math.floor((chipW * 0.92) / (fontSize * 0.58)));
-        const fullName = occupant.block.name;
-        const label = fullName.length > maxChars
-          ? (maxChars <= 1 ? fullName.slice(0, 1) : fullName.slice(0, maxChars - 1) + '…')
-          : fullName;
-        const textEl = el('text', {
-          x: sx + slotW / 2, y: sy + slotH / 2 + fontSize * 0.35,
-          'text-anchor': 'middle', 'font-size': fontSize, class: 'block-chip-label',
-        }, [document.createTextNode(label)]);
-        if (label !== fullName) textEl.appendChild(el('title', {}, [document.createTextNode(fullName)]));
-        g.appendChild(textEl);
-      } else {
-        g.appendChild(el('rect', {
-          x: sx + slotW * 0.08, y: sy + slotH * 0.08,
-          width: slotW * 0.84, height: slotH * 0.84,
-          class: 'slot-empty', rx: 1,
-        }));
+    g.appendChild(el('rect', {
+      x: usableX, y: usableY, width: usableW, height: usableH, class: 'cell-usable-outline',
+    }));
+
+    // 셀 경계 밖으로 튀어나온 블록(용량 초과)도 잘려서 보이도록 클리핑한다.
+    const clipId = `cell-clip-${cell.id}`;
+    g.appendChild(el('defs', {}, [
+      el('clipPath', { id: clipId }, [
+        el('rect', { x: cell.x, y: cell.y, width: cell.w, height: cell.h }),
+      ]),
+    ]));
+    const blocksGroup = el('g', { 'clip-path': `url(#${clipId})` });
+
+    const gap = Math.min(cell.w, cell.h) * 0.03;
+    let cursorX = usableX, cursorY = usableY, rowH = 0;
+    occ.forEach((occupant, i) => {
+      const bw = occupant.block.size.w;
+      const bl = occupant.block.size.l;
+      if (cursorX > usableX && cursorX + bw > usableX + usableW) {
+        cursorX = usableX;
+        cursorY += rowH + gap;
+        rowH = 0;
       }
-    }
+      const isOverflow = i >= cell.capacity || (cursorX + bw) > (usableX + usableW) || (cursorY + bl) > (usableY + usableH);
+      blocksGroup.appendChild(el('rect', {
+        x: cursorX, y: cursorY, width: bw, height: bl,
+        fill: occupant.block.color, class: 'block-chip' + (isOverflow ? ' block-chip-overflow' : ''),
+      }));
+      const fontSize = Math.max(1.6, Math.min(bw, bl) * 0.28);
+      const maxChars = Math.max(1, Math.floor((bw * 0.9) / (fontSize * 0.58)));
+      const fullName = occupant.block.name;
+      const label = fullName.length > maxChars
+        ? (maxChars <= 1 ? fullName.slice(0, 1) : fullName.slice(0, maxChars - 1) + '…')
+        : fullName;
+      const textEl = el('text', {
+        x: cursorX + bw / 2, y: cursorY + bl / 2 + fontSize * 0.35,
+        'text-anchor': 'middle', 'font-size': fontSize, class: 'block-chip-label',
+      }, [document.createTextNode(label)]);
+      textEl.appendChild(el('title', {}, [document.createTextNode(`${fullName} (${bw}×${bl}m)`)]));
+      blocksGroup.appendChild(textEl);
+
+      cursorX += bw + gap;
+      rowH = Math.max(rowH, bl);
+    });
+    g.appendChild(blocksGroup);
 
     // 셀 라벨 + 점유율 배지
     const labelSize = Math.max(2.6, Math.min(cell.w, cell.h) * 0.09);
