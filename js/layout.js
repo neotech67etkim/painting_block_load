@@ -123,10 +123,11 @@ export function renderLayout(container, date) {
 
     // 셀 라벨 + 점유율 배지
     const labelSize = Math.max(2.6, Math.min(cell.w, cell.h) * 0.09);
+    const labelText = cell.signage ? `${cell.name} (#${cell.signage})` : cell.name;
     g.appendChild(el('text', {
       x: cell.x + 1.5, y: cell.y + labelSize + 1,
       'font-size': labelSize, class: 'cell-label',
-    }, [document.createTextNode(cell.name)]));
+    }, [document.createTextNode(labelText)]));
     g.appendChild(el('text', {
       x: cell.x + cell.w - 1.5, y: cell.y + labelSize + 1,
       'text-anchor': 'end', 'font-size': labelSize, class: 'cell-badge',
@@ -159,7 +160,7 @@ export function renderCellDetail(container, cellId, date) {
 
   const wrap = document.createElement('div');
   wrap.innerHTML = `
-    <h3>${cell.factoryName} · ${cell.name}</h3>
+    <h3>${cell.factoryName} · ${cell.name}${cell.signage ? ` <span class="muted">(#${cell.signage})</span>` : ''}</h3>
     <table class="kv">
       <tr><th>구분</th><td>${cell.type === 'blast' ? '블라스팅셀' : '도장셀'}</td></tr>
       <tr><th>건축규격 (W×L×H)</th><td>${cell.w}m × ${cell.h}m × ${cell.hh}m</td></tr>

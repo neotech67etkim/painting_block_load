@@ -1,9 +1,16 @@
 // 해양사업본부 도장공장 야드 데이터
-// 출처: 블라스팅셀/도장셀 규격표 (표 기준 셀 번호/개수 채택) + 사용자 확인 사항(2026-08-26):
+// 출처: 블라스팅셀/도장셀 규격표 (표 기준 셀 번호/개수 채택) + 사용자 확인 사항(2026-08-26, 2026-08-29):
 //   - 도장1공장: 1-1·1-2 = 블라스팅셀(각자 도장셀로 바로 빼내는 빅도어 보유),
 //     1-3 = 통합 도장셀(칸막이 없이 뻥 뚫린 구조, 측면 입구 5A/B·7B/A로 블록 입출).
 //     블라스팅 완료 블록은 3A/B 빅도어를 통해 블라스팅셀 → 1-3 도장셀로 이동.
-//   - 도장2공장: 2-1·2-2 = 블라스팅셀, 2-3~2-10 = 단독 도장셀(각 셀마다 개별 빅도어).
+//   - 도장2공장: BLASTING SHOP과 PAINT'G SHOP이 각각 독립적으로 1부터 번호가 매겨진다
+//     (블라스팅 2-1·2-2, 도장 2-1~2-8). 건물상 실제 물리적 위치 순서(정문 쪽부터)는
+//     블라스팅 2-1(#1)·2-2(#2) 다음 도장 2-1(#3)~2-8(#10)로 이어지며, 이 연속 번호를
+//     각 셀의 signage 필드에 담아둔다(엑셀 배치도 상 표기 확인, 2026-08-29).
+//   - 도장2공장 블라스팅 2-1(#1) 셀은 다른 셀과 달리 건물 내에서 90도(반시계 방향)
+//     회전된 형태로 지어져 있어, w/h가 다른 블라스팅셀과 가로/세로가 바뀌어 있다
+//     (건축규격 40m×32m). 입고 사이즈(netW/netL 38×31)가 이 방향으로만 자연스럽게
+//     들어맞는다.
 //   - 각 셀은 벽면 양옆 장비 때문에 실제 블록 배치 가능 폭이 셀 크기보다 줄어듦
 //     (EQUIPMENT_CLEARANCE_M 만큼 사방 여유 필요).
 // 좌표는 항공사진 배치를 참고한 개략도(schematic)이며 실측 좌표가 아님.
@@ -50,18 +57,18 @@ export const YARD = {
     {
       id: 'f2',
       name: '도장2공장',
-      x: 140, y: 40, w: 328, h: 46,
+      x: 140, y: 40, w: 336, h: 46,
       cells: [
-        { id: 'f2-blast1', name: '2-1 블라스팅셀', factory: '2공장', type: 'blast', x: 140, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
-        { id: 'f2-blast2', name: '2-2 블라스팅셀', factory: '2공장', type: 'blast', x: 172, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
-        { id: 'f2-paint1', name: '2-3 도장셀', factory: '2공장', type: 'paint', x: 204, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint2', name: '2-4 도장셀', factory: '2공장', type: 'paint', x: 236, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint3', name: '2-5 도장셀', factory: '2공장', type: 'paint', x: 268, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint4', name: '2-6 도장셀', factory: '2공장', type: 'paint', x: 300, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
-        { id: 'f2-paint5', name: '2-7 도장셀', factory: '2공장', type: 'paint', x: 332, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint6', name: '2-8 도장셀', factory: '2공장', type: 'paint', x: 366, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint7', name: '2-9 도장셀', factory: '2공장', type: 'paint', x: 400, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
-        { id: 'f2-paint8', name: '2-10 도장셀', factory: '2공장', type: 'paint', x: 434, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-blast1', name: '2-1 블라스팅셀', signage: 1, factory: '2공장', type: 'blast', x: 140, y: 40, w: 40, h: 32, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
+        { id: 'f2-blast2', name: '2-2 블라스팅셀', signage: 2, factory: '2공장', type: 'blast', x: 180, y: 40, w: 32, h: 40, hh: 15, netW: 38, netL: 31, capacity: 2, area: 1280 },
+        { id: 'f2-paint1', name: '2-1 도장셀', signage: 3, factory: '2공장', type: 'paint', x: 212, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint2', name: '2-2 도장셀', signage: 4, factory: '2공장', type: 'paint', x: 244, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint3', name: '2-3 도장셀', signage: 5, factory: '2공장', type: 'paint', x: 276, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint4', name: '2-4 도장셀', signage: 6, factory: '2공장', type: 'paint', x: 308, y: 40, w: 32, h: 40, hh: 14.5, capacity: 2, area: 1280 },
+        { id: 'f2-paint5', name: '2-5 도장셀', signage: 7, factory: '2공장', type: 'paint', x: 340, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint6', name: '2-6 도장셀', signage: 8, factory: '2공장', type: 'paint', x: 374, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint7', name: '2-7 도장셀', signage: 9, factory: '2공장', type: 'paint', x: 408, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
+        { id: 'f2-paint8', name: '2-8 도장셀', signage: 10, factory: '2공장', type: 'paint', x: 442, y: 40, w: 34, h: 46, hh: 16, capacity: 2, area: 1564 },
       ],
     },
   ],
